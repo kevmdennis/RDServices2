@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import SiteHomepage from "@/components/site-preview/SiteHomepage";
+import { sanitizeHeroTitle } from "@/lib/sites/sanitize-site-text";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Site } from "@/lib/sites/types";
 import type { Business } from "@/lib/supabase/types";
@@ -25,9 +26,13 @@ export async function generateMetadata({
     return { title: "Website preview" };
   }
 
+  const heroTitle = site.hero_title
+    ? sanitizeHeroTitle(site.hero_title)
+    : null;
+
   return {
-    title: site.business_name ?? site.hero_title ?? "Website preview",
-    description: site.hero_title ?? "Generated local business website preview",
+    title: site.business_name ?? heroTitle ?? "Website preview",
+    description: heroTitle ?? "Generated local business website preview",
   };
 }
 

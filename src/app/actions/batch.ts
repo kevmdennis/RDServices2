@@ -1,6 +1,8 @@
 "use server";
 
+import { fixBatchSiteText } from "@/lib/sites/fix-site-text";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 export type CreateBatchInput = {
@@ -55,4 +57,33 @@ export async function createBatch(input: CreateBatchInput): Promise<void> {
   }
 
   redirect(`/batch/${batch.id}`);
+}
+
+export type FixExistingSiteTextResult =
+  | {
+      success: true;
+      updatedCount: number;
+      skippedCount: number;
+      totalSites: number;
+    }
+  | { success: false; error: string };
+
+export async function fixExistingSiteText(
+  batchId: string,
+): Promise<FixExistingSiteTextResult> {
+  try {
+    const result = await fixBatchSiteText(batchId);
+
+    revalidatePath(`/batch/${batchId}`);
+
+    return {
+      success: true,
+      ...result,
+    };
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Failed to fix existing site text.";
+
+    return { success: false, error: message };
+  }
 }

@@ -5,6 +5,11 @@ import {
   extractGoogleTestimonials,
   sanitizeGeneratedTestimonials,
 } from "@/lib/sites/testimonials";
+import {
+  DEFAULT_CTA_TEXT,
+  sanitizeCtaText,
+  sanitizeHeroTitle,
+} from "@/lib/sites/sanitize-site-text";
 import type {
   GeneratedSiteContent,
   Site,
@@ -152,9 +157,12 @@ async function generateSiteContentWithOpenAI(
           "hero_title, hero_subtitle, about, services, hours, cta_text, theme, testimonials.",
           "Keep copy simple, friendly, and trustworthy for a local business website.",
           "Do not invent facts, awards, years in business, or guarantees.",
+          "hero_title rules:",
+          "- NEVER start with 'Welcome to', 'Welcome', or 'Introducing'.",
+          "- Use the business name, a concise value proposition, or '[service/value] in [city/area]'.",
           "services must be an array of objects: { name, description } with 3 to 6 items inferred from the business name, type, and review themes.",
           "hours should format the provided opening hours data for website display.",
-          "cta_text should be a short call-to-action such as 'Call today' or 'Book an appointment'.",
+          "cta_text should be a short call-to-action. Prefer 'Give Us a Call Today' instead of 'Call Today'.",
           "theme must be an object: { style, primary_color, accent_color } using hex colors suited to the business.",
           "testimonials rules:",
           "- NEVER invent reviews.",
@@ -201,12 +209,14 @@ async function generateSiteContentWithOpenAI(
   }
 
   return {
-    hero_title: String(parsed.hero_title).trim(),
+    hero_title: sanitizeHeroTitle(String(parsed.hero_title).trim()),
     hero_subtitle: String(parsed.hero_subtitle).trim(),
     about: String(parsed.about).trim(),
     services: normalizeServices(parsed.services),
     hours: parsed.hours ?? business.hours_json ?? null,
-    cta_text: String(parsed.cta_text ?? "Contact us today").trim(),
+    cta_text: sanitizeCtaText(
+      String(parsed.cta_text ?? DEFAULT_CTA_TEXT).trim(),
+    ),
     theme: normalizeTheme(parsed.theme),
     testimonials: Array.isArray(parsed.testimonials)
       ? parsed.testimonials.map((testimonial) => ({

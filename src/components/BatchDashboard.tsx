@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
+import { fixExistingSiteText } from "@/app/actions/batch";
 import BatchItemsTable from "@/components/BatchItemsTable";
 import {
   computeBatchStatusCounts,
@@ -32,6 +33,7 @@ export default function BatchDashboard({
   const [isGenerating, setIsGenerating] = useState(initialBatch.status === "processing");
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [isFixingSiteText, startFixSiteTextTransition] = useTransition();
 
   useEffect(() => {
     setBatch(initialBatch);
@@ -125,6 +127,41 @@ export default function BatchDashboard({
   const canGenerateAll =
     hasEligibleBatchItems(items) && !isGenerating && batch.status !== "processing";
 
+  const hasCompletedSites = items.some(
+    (item) => item.status === "complete" && item.site_id,
+  );
+
+  function handleFixExistingSiteText() {
+    const completedCount = items.filter(
+      (item) => item.status === "complete" && item.site_id,
+    ).length;
+
+    const confirmed = window.confirm(
+      `Fix hero and CTA text for ${completedCount} completed site(s) in this batch? This updates stored site copy without regenerating content.`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setActionError(null);
+    setActionMessage(null);
+
+    startFixSiteTextTransition(async () => {
+      const result = await fixExistingSiteText(batch.id);
+
+      if (!result.success) {
+        setActionError(result.error);
+        return;
+      }
+
+      setActionMessage(
+        `Fixed site text: ${result.updatedCount} updated, ${result.skippedCount} already correct (${result.totalSites} total).`,
+      );
+      await refreshBatchStatus();
+    });
+  }
+
   return (
     <>
       <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
@@ -135,14 +172,30 @@ export default function BatchDashboard({
               Process all pending items sequentially: fetch Google data, then generate websites.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={handleGenerateAll}
-            disabled={!canGenerateAll}
-            className="rounded-lg bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white transition-colors enabled:hover:bg-zinc-700 disabled:cursor-not-allowed disabled:bg-zinc-300 disabled:text-zinc-500"
-          >
-            {isGenerating ? "Generating all..." : "Generate All Websites"}
-          </button>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            {hasCompletedSites && (
+              <button
+                type="button"
+                onClick={handleFixExistingSiteText}
+                disabled={
+                  isGenerating ||
+                  batch.status === "processing" ||
+                  isFixingSiteText
+                }
+                className="rounded-lg border border-zinc-300 bg-white px-5 py-2.5 text-sm font-medium text-zinc-900 transition-colors enabled:hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isFixingSiteText ? "Fixing site text..." : "Fix Existing Site Text"}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={handleGenerateAll}
+              disabled={!canGenerateAll}
+              className="rounded-lg bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white transition-colors enabled:hover:bg-zinc-700 disabled:cursor-not-allowed disabled:bg-zinc-300 disabled:text-zinc-500"
+            >
+              {isGenerating ? "Generating all..." : "Generate All Websites"}
+            </button>
+          </div>
         </div>
 
         {actionError && (

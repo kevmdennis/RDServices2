@@ -1,6 +1,11 @@
 import PhotoCarousel from "@/components/PhotoCarousel";
 import { getDisplayablePhotoUrls } from "@/lib/businesses/photos";
 import { formatSiteHours } from "@/lib/sites/format-hours";
+import {
+  DEFAULT_CTA_TEXT,
+  sanitizeCtaText,
+  sanitizeHeroTitle,
+} from "@/lib/sites/sanitize-site-text";
 import type { Site, SiteContact, SiteService, SiteTestimonial, SiteTheme } from "@/lib/sites/types";
 import type { Business } from "@/lib/supabase/types";
 import type { CSSProperties } from "react";
@@ -19,7 +24,8 @@ export default function SiteHomepage({ site, business }: SiteHomepageProps) {
   const services = site.services_json ?? [];
   const testimonials = site.testimonials_json ?? [];
   const hours = formatSiteHours(site.hours_json ?? business.hours_json);
-  const ctaText = contact.cta_text || "Contact us today";
+  const heroTitle = sanitizeHeroTitle(site.hero_title ?? businessName);
+  const ctaText = sanitizeCtaText(contact.cta_text || DEFAULT_CTA_TEXT);
   const phoneHref = contact.phone
     ? `tel:${contact.phone.replace(/[^\d+]/g, "")}`
     : null;
@@ -37,7 +43,6 @@ export default function SiteHomepage({ site, business }: SiteHomepageProps) {
       <header className="sticky top-0 z-20 border-b border-zinc-200/80 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
           <div className="min-w-0">
-            <p className="truncate text-sm font-medium text-zinc-500">Welcome to</p>
             <h1 className="truncate text-lg font-semibold sm:text-xl">{businessName}</h1>
           </div>
           {phoneHref && (
@@ -77,7 +82,7 @@ export default function SiteHomepage({ site, business }: SiteHomepageProps) {
               {businessName}
             </p>
             <h2 className="text-4xl font-semibold tracking-tight sm:text-5xl">
-              {site.hero_title}
+              {heroTitle}
             </h2>
             {site.hero_subtitle && (
               <p className="mt-4 text-lg leading-8 text-white/90 sm:text-xl">
@@ -226,7 +231,7 @@ function resolveContact(site: Site, business: Business): SiteContact {
     address: contact?.address ?? business.address,
     website: contact?.website ?? business.website,
     google_maps_uri: contact?.google_maps_uri ?? business.google_maps_uri,
-    cta_text: contact?.cta_text ?? "Contact us today",
+    cta_text: sanitizeCtaText(contact?.cta_text ?? DEFAULT_CTA_TEXT),
   };
 }
 
