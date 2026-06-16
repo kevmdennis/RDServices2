@@ -3,6 +3,11 @@ import {
   computeBatchStatusCounts,
   countTerminalItems,
 } from "@/lib/batches/status";
+import {
+  getMetricsForSite,
+  getSiteMetricsBySiteIds,
+  summarizeBatchMetrics,
+} from "@/lib/analytics/metrics";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Batch, BatchItem } from "@/lib/supabase/types";
 
@@ -199,9 +204,21 @@ export async function getBatchStatusSnapshot(batchId: string) {
       : null,
   }));
 
+  const siteIds = items
+    .map((item) => item.site_id)
+    .filter((siteId): siteId is string => siteId !== null);
+
+  const metricsBySiteId = await getSiteMetricsBySiteIds(siteIds);
+
+  const itemsWithMetrics = itemsWithBusiness.map((item) => ({
+    ...item,
+    metrics: item.site_id ? getMetricsForSite(metricsBySiteId, item.site_id) : null,
+  }));
+
   return {
     batch,
     counts: computeBatchStatusCounts(items),
-    items: itemsWithBusiness,
+    items: itemsWithMetrics,
+    metricsSummary: summarizeBatchMetrics(metricsBySiteId),
   };
 }

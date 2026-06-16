@@ -7,18 +7,21 @@ import {
   computeBatchStatusCounts,
   hasEligibleBatchItems,
 } from "@/lib/batches/status";
+import type { BatchMetricsSummary } from "@/lib/analytics/metrics";
 import type { Batch, BatchItemWithBusiness } from "@/lib/supabase/types";
 import type { BatchStatusCounts } from "@/lib/batches/status";
 
 type BatchDashboardProps = {
   batch: Batch;
   initialItems: BatchItemWithBusiness[];
+  initialMetricsSummary: BatchMetricsSummary;
 };
 
 type BatchStatusResponse = {
   batch: Batch;
   counts: BatchStatusCounts;
   items: BatchItemWithBusiness[];
+  metricsSummary: BatchMetricsSummary;
 };
 
 const POLL_INTERVAL_MS = 3000;
@@ -26,9 +29,11 @@ const POLL_INTERVAL_MS = 3000;
 export default function BatchDashboard({
   batch: initialBatch,
   initialItems,
+  initialMetricsSummary,
 }: BatchDashboardProps) {
   const [batch, setBatch] = useState(initialBatch);
   const [items, setItems] = useState(initialItems);
+  const [metricsSummary, setMetricsSummary] = useState(initialMetricsSummary);
   const [counts, setCounts] = useState(() => computeBatchStatusCounts(initialItems));
   const [isGenerating, setIsGenerating] = useState(initialBatch.status === "processing");
   const [actionError, setActionError] = useState<string | null>(null);
@@ -38,8 +43,9 @@ export default function BatchDashboard({
   useEffect(() => {
     setBatch(initialBatch);
     setItems(initialItems);
+    setMetricsSummary(initialMetricsSummary);
     setCounts(computeBatchStatusCounts(initialItems));
-  }, [initialBatch, initialItems]);
+  }, [initialBatch, initialItems, initialMetricsSummary]);
 
   const refreshBatchStatus = useCallback(async () => {
     const response = await fetch(
@@ -55,6 +61,7 @@ export default function BatchDashboard({
     setBatch(snapshot.batch);
     setItems(snapshot.items);
     setCounts(snapshot.counts);
+    setMetricsSummary(snapshot.metricsSummary);
     return true;
   }, [batch.id]);
 
@@ -243,6 +250,36 @@ export default function BatchDashboard({
           <p className="mt-4 text-sm text-zinc-600">
             Processing batch... refreshing every few seconds.
           </p>
+        )}
+
+        {hasCompletedSites && (
+          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            <ProgressCard
+              label="Total website views"
+              value={metricsSummary.totalViews}
+              tone="blue"
+            />
+            <ProgressCard
+              label="Total phone clicks"
+              value={metricsSummary.totalPhoneClicks}
+              tone="emerald"
+            />
+            <ProgressCard
+              label="Total maps clicks"
+              value={metricsSummary.totalMapsClicks}
+              tone="emerald"
+            />
+            <ProgressCard
+              label="Total website clicks"
+              value={metricsSummary.totalWebsiteClicks}
+              tone="emerald"
+            />
+            <ProgressCard
+              label="Total engagement score"
+              value={metricsSummary.totalEngagementScore}
+              tone="amber"
+            />
+          </div>
         )}
       </section>
 

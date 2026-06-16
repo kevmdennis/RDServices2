@@ -7,6 +7,14 @@ import { fetchBusinessData, generateWebsite, refreshPhotos } from "@/app/actions
 import BusinessPhotoThumbnails from "@/components/BusinessPhotoThumbnails";
 import type { BatchItemWithBusiness } from "@/lib/supabase/types";
 
+function formatLastViewed(value: string | null | undefined): string {
+  if (!value) {
+    return "—";
+  }
+
+  return new Date(value).toLocaleString();
+}
+
 type BatchItemsTableProps = {
   items: BatchItemWithBusiness[];
   disableActions?: boolean;
@@ -111,6 +119,24 @@ export default function BatchItemsTable({
                 Photos
               </th>
               <th className="px-4 py-3 font-medium text-zinc-700">Status</th>
+              <th className="hidden px-4 py-3 font-medium text-zinc-700 xl:table-cell">
+                Views
+              </th>
+              <th className="hidden px-4 py-3 font-medium text-zinc-700 xl:table-cell">
+                Phone
+              </th>
+              <th className="hidden px-4 py-3 font-medium text-zinc-700 xl:table-cell">
+                Maps
+              </th>
+              <th className="hidden px-4 py-3 font-medium text-zinc-700 xl:table-cell">
+                Website
+              </th>
+              <th className="hidden px-4 py-3 font-medium text-zinc-700 xl:table-cell">
+                Score
+              </th>
+              <th className="hidden px-4 py-3 font-medium text-zinc-700 2xl:table-cell">
+                Last viewed
+              </th>
               <th className="px-4 py-3 font-medium text-zinc-700">Actions</th>
             </tr>
           </thead>
@@ -122,6 +148,7 @@ export default function BatchItemsTable({
               const isGenerating = isActive && activeAction === "generate";
               const isRefreshingPhotos =
                 isActive && activeAction === "refreshPhotos";
+              const metrics = item.metrics;
 
               return (
                 <tr key={item.id}>
@@ -159,6 +186,24 @@ export default function BatchItemsTable({
                       </p>
                     )}
                   </td>
+                  <td className="hidden px-4 py-3 text-zinc-800 xl:table-cell">
+                    {metrics?.total_views ?? "—"}
+                  </td>
+                  <td className="hidden px-4 py-3 text-zinc-800 xl:table-cell">
+                    {metrics?.phone_clicks ?? "—"}
+                  </td>
+                  <td className="hidden px-4 py-3 text-zinc-800 xl:table-cell">
+                    {metrics?.maps_clicks ?? "—"}
+                  </td>
+                  <td className="hidden px-4 py-3 text-zinc-800 xl:table-cell">
+                    {metrics?.website_clicks ?? "—"}
+                  </td>
+                  <td className="hidden px-4 py-3 font-medium text-zinc-900 xl:table-cell">
+                    {metrics?.engagement_score ?? "—"}
+                  </td>
+                  <td className="hidden px-4 py-3 text-zinc-600 2xl:table-cell">
+                    {formatLastViewed(metrics?.last_viewed_at)}
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex flex-col gap-2">
                       {item.status === "pending" && (
@@ -194,14 +239,22 @@ export default function BatchItemsTable({
                         </button>
                       )}
                       {item.status === "complete" && item.site_id && (
-                        <Link
-                          href={`/site/${item.site_id}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs font-medium text-blue-700 hover:text-blue-900"
-                        >
-                          View Website
-                        </Link>
+                        <>
+                          <Link
+                            href={`/site/${item.site_id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs font-medium text-blue-700 hover:text-blue-900"
+                          >
+                            View Website
+                          </Link>
+                          <Link
+                            href={`/analytics/${item.site_id}`}
+                            className="text-xs font-medium text-violet-700 hover:text-violet-900"
+                          >
+                            Analytics
+                          </Link>
+                        </>
                       )}
                       {item.status !== "pending" &&
                         item.status !== "business_data_saved" &&

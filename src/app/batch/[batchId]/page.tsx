@@ -2,6 +2,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import BatchDashboard from "@/components/BatchDashboard";
 import PlaceDetailsTester from "@/components/PlaceDetailsTester";
+import {
+  getMetricsForSite,
+  getSiteMetricsBySiteIds,
+  summarizeBatchMetrics,
+} from "@/lib/analytics/metrics";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type {
   Batch,
@@ -72,6 +77,18 @@ export default async function BatchPage({ params }: BatchPageProps) {
     }),
   );
 
+  const siteIds = itemsWithBusiness
+    .map((item) => item.site_id)
+    .filter((siteId): siteId is string => siteId !== null);
+
+  const metricsBySiteId = await getSiteMetricsBySiteIds(siteIds);
+  const metricsSummary = summarizeBatchMetrics(metricsBySiteId);
+
+  const itemsWithMetrics = itemsWithBusiness.map((item) => ({
+    ...item,
+    metrics: item.site_id ? getMetricsForSite(metricsBySiteId, item.site_id) : null,
+  }));
+
   return (
     <main className="min-h-full bg-zinc-50">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-12">
@@ -101,7 +118,11 @@ export default async function BatchPage({ params }: BatchPageProps) {
           <InfoCard label="Batch status" value={batch.status} />
         </section>
 
-        <BatchDashboard batch={batch} initialItems={itemsWithBusiness} />
+        <BatchDashboard
+          batch={batch}
+          initialItems={itemsWithMetrics}
+          initialMetricsSummary={metricsSummary}
+        />
 
         <PlaceDetailsTester />
       </div>

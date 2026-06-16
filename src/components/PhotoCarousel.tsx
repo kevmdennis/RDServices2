@@ -1,10 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import TrackedButton from "@/components/site-preview/TrackedButton";
 
 type PhotoCarouselProps = {
   photos: string[];
   businessName: string;
+  siteId?: string;
+  businessId?: string;
 };
 
 const AUTO_SCROLL_MS = 5000;
@@ -24,6 +27,8 @@ function getSlidesPerView(width: number): number {
 export default function PhotoCarousel({
   photos,
   businessName,
+  siteId,
+  businessId,
 }: PhotoCarouselProps) {
   const uniquePhotos = useMemo(
     () => [...new Set(photos.filter((photo) => photo.trim().length > 0))],
@@ -64,7 +69,12 @@ export default function PhotoCarousel({
           ))}
         </div>
         <div className="md:hidden">
-          <CarouselTrack photos={uniquePhotos} businessName={businessName} />
+          <CarouselTrack
+            photos={uniquePhotos}
+            businessName={businessName}
+            siteId={siteId}
+            businessId={businessId}
+          />
         </div>
       </section>
     );
@@ -72,7 +82,12 @@ export default function PhotoCarousel({
 
   return (
     <section className="border-b border-zinc-200 bg-zinc-50 py-8 sm:py-10">
-      <CarouselTrack photos={uniquePhotos} businessName={businessName} />
+      <CarouselTrack
+        photos={uniquePhotos}
+        businessName={businessName}
+        siteId={siteId}
+        businessId={businessId}
+      />
     </section>
   );
 }
@@ -80,9 +95,13 @@ export default function PhotoCarousel({
 function CarouselTrack({
   photos,
   businessName,
+  siteId,
+  businessId,
 }: {
   photos: string[];
   businessName: string;
+  siteId?: string;
+  businessId?: string;
 }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [slidesPerView, setSlidesPerView] = useState(1);
@@ -150,22 +169,52 @@ function CarouselTrack({
       <div className="relative">
         {canScroll && (
           <>
-            <button
-              type="button"
-              onClick={goPrev}
-              aria-label="Previous photos"
-              className="absolute left-0 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 rounded-full border border-zinc-200 bg-white p-2 text-zinc-700 shadow-md transition hover:bg-zinc-50"
-            >
-              ←
-            </button>
-            <button
-              type="button"
-              onClick={goNext}
-              aria-label="Next photos"
-              className="absolute right-0 top-1/2 z-10 -translate-y-1/2 translate-x-1/2 rounded-full border border-zinc-200 bg-white p-2 text-zinc-700 shadow-md transition hover:bg-zinc-50"
-            >
-              →
-            </button>
+            {siteId ? (
+              <TrackedButton
+                type="button"
+                onClick={goPrev}
+                siteId={siteId}
+                businessId={businessId}
+                eventType="gallery_interaction"
+                eventValue="previous"
+                aria-label="Previous photos"
+                className="absolute left-0 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 rounded-full border border-zinc-200 bg-white p-2 text-zinc-700 shadow-md transition hover:bg-zinc-50"
+              >
+                ←
+              </TrackedButton>
+            ) : (
+              <button
+                type="button"
+                onClick={goPrev}
+                aria-label="Previous photos"
+                className="absolute left-0 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 rounded-full border border-zinc-200 bg-white p-2 text-zinc-700 shadow-md transition hover:bg-zinc-50"
+              >
+                ←
+              </button>
+            )}
+            {siteId ? (
+              <TrackedButton
+                type="button"
+                onClick={goNext}
+                siteId={siteId}
+                businessId={businessId}
+                eventType="gallery_interaction"
+                eventValue="next"
+                aria-label="Next photos"
+                className="absolute right-0 top-1/2 z-10 -translate-y-1/2 translate-x-1/2 rounded-full border border-zinc-200 bg-white p-2 text-zinc-700 shadow-md transition hover:bg-zinc-50"
+              >
+                →
+              </TrackedButton>
+            ) : (
+              <button
+                type="button"
+                onClick={goNext}
+                aria-label="Next photos"
+                className="absolute right-0 top-1/2 z-10 -translate-y-1/2 translate-x-1/2 rounded-full border border-zinc-200 bg-white p-2 text-zinc-700 shadow-md transition hover:bg-zinc-50"
+              >
+                →
+              </button>
+            )}
           </>
         )}
 
@@ -194,19 +243,37 @@ function CarouselTrack({
 
       {canScroll && (
         <div className="mt-5 flex items-center justify-center gap-2">
-          {Array.from({ length: totalDots }, (_, index) => (
-            <button
-              key={`dot-${index}`}
-              type="button"
-              aria-label={`Go to photo ${index + 1}`}
-              onClick={() => goTo(index)}
-              className={`h-2.5 rounded-full transition-all ${
-                index === currentIndex
-                  ? "w-8 bg-zinc-900"
-                  : "w-2.5 bg-zinc-300 hover:bg-zinc-400"
-              }`}
-            />
-          ))}
+          {Array.from({ length: totalDots }, (_, index) =>
+            siteId ? (
+              <TrackedButton
+                key={`dot-${index}`}
+                type="button"
+                aria-label={`Go to photo ${index + 1}`}
+                onClick={() => goTo(index)}
+                siteId={siteId}
+                businessId={businessId}
+                eventType="gallery_interaction"
+                eventValue={`dot_${index + 1}`}
+                className={`h-2.5 rounded-full transition-all ${
+                  index === currentIndex
+                    ? "w-8 bg-zinc-900"
+                    : "w-2.5 bg-zinc-300 hover:bg-zinc-400"
+                }`}
+              />
+            ) : (
+              <button
+                key={`dot-${index}`}
+                type="button"
+                aria-label={`Go to photo ${index + 1}`}
+                onClick={() => goTo(index)}
+                className={`h-2.5 rounded-full transition-all ${
+                  index === currentIndex
+                    ? "w-8 bg-zinc-900"
+                    : "w-2.5 bg-zinc-300 hover:bg-zinc-400"
+                }`}
+              />
+            ),
+          )}
         </div>
       )}
     </div>

@@ -1,4 +1,5 @@
 import type { BusinessPhotosJson } from "@/lib/google/place-photos";
+import type { SiteMetrics } from "@/lib/analytics/types";
 
 export type BatchStatus =
   | "pending"
@@ -60,4 +61,5 @@ export type BatchItemWithBusiness = BatchItem & {
     Business,
     "id" | "name" | "address" | "phone" | "rating" | "photos_json"
   > | null;
+  metrics?: SiteMetrics | null;
 };
