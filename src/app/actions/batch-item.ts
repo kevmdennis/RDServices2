@@ -5,6 +5,7 @@ import {
   getPlaceDetailsErrorMessage,
   upsertBusinessFromPlaceId,
 } from "@/lib/businesses/upsert-from-place";
+import { refreshBusinessPhotos } from "@/lib/businesses/refresh-photos";
 import { generateSiteForBusiness } from "@/lib/sites/generate-site";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -14,6 +15,10 @@ export type FetchBusinessDataResult =
 
 export type GenerateWebsiteResult =
   | { success: true; siteId: string }
+  | { success: false; error: string };
+
+export type RefreshPhotosResult =
+  | { success: true; photoCount: number }
   | { success: false; error: string };
 
 export async function fetchBusinessData(
@@ -162,6 +167,45 @@ export async function generateWebsite(
       .eq("id", batchItemId);
 
     revalidatePath(`/batch/${batchItem.batch_id}`);
+
+    return { success: false, error: message };
+  }
+}
+
+export async function refreshPhotos(
+  batchItemId: string,
+): Promise<RefreshPhotosResult> {
+  const supabase = createAdminClient();
+
+  const { data: batchItem, error: fetchError } = await supabase
+    .from("batch_items")
+    .select("id, batch_id, business_id")
+    .eq("id", batchItemId)
+    .single();
+
+  if (fetchError || !batchItem) {
+    return { success: false, error: "Batch item not found." };
+  }
+
+  if (!batchItem.business_id) {
+    return {
+      success: false,
+      error: "Fetch business data before refreshing photos.",
+    };
+  }
+
+  try {
+    const photosJson = await refreshBusinessPhotos(batchItem.business_id);
+
+    revalidatePath(`/batch/${batchItem.batch_id}`);
+
+    return {
+      success: true,
+      photoCount: photosJson.photos.length,
+    };
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Failed to refresh photos.";
 
     return { success: false, error: message };
   }

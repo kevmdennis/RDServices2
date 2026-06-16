@@ -1,3 +1,4 @@
+import PhotoCarousel from "@/components/PhotoCarousel";
 import { getDisplayablePhotoUrls } from "@/lib/businesses/photos";
 import { formatSiteHours } from "@/lib/sites/format-hours";
 import type { Site, SiteContact, SiteService, SiteTestimonial, SiteTheme } from "@/lib/sites/types";
@@ -15,7 +16,6 @@ export default function SiteHomepage({ site, business }: SiteHomepageProps) {
   const theme = resolveTheme(site.theme_json);
   const photos = getDisplayablePhotoUrls(business.photos_json);
   const heroPhoto = photos[0] ?? null;
-  const galleryPhotos = photos.slice(0, 5);
   const services = site.services_json ?? [];
   const testimonials = site.testimonials_json ?? [];
   const hours = formatSiteHours(site.hours_json ?? business.hours_json);
@@ -117,20 +117,7 @@ export default function SiteHomepage({ site, business }: SiteHomepageProps) {
         </div>
       </section>
 
-      {galleryPhotos.length > 1 && (
-        <section className="border-b border-zinc-200 bg-zinc-50">
-          <div className="mx-auto grid max-w-6xl grid-cols-2 gap-2 p-2 sm:grid-cols-3 lg:grid-cols-5">
-            {galleryPhotos.map((photo, index) => (
-              <img
-                key={`${photo}-${index}`}
-                src={photo}
-                alt={`${businessName} photo ${index + 1}`}
-                className="aspect-[4/3] w-full rounded-xl object-cover"
-              />
-            ))}
-          </div>
-        </section>
-      )}
+      <PhotoCarousel photos={photos} businessName={businessName} />
 
       <main className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
         {site.about && (

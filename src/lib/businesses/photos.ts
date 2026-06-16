@@ -49,9 +49,18 @@ export function getDisplayablePhotoUrls(photosJson: unknown): string[] {
     return [];
   }
 
+  const seenUrls = new Set<string>();
+
   return parsed.photos
     .map((photo) => getPhotoDisplayUrl(photo))
-    .filter((url): url is string => url !== null);
+    .filter((url): url is string => {
+      if (!url || seenUrls.has(url)) {
+        return false;
+      }
+
+      seenUrls.add(url);
+      return true;
+    });
 }
 
 export function getPhotoDisplayUrl(photo: ResolvedPlacePhoto): string | null {

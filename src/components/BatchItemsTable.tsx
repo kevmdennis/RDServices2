@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { fetchBusinessData, generateWebsite } from "@/app/actions/batch-item";
+import { fetchBusinessData, generateWebsite, refreshPhotos } from "@/app/actions/batch-item";
 import BusinessPhotoThumbnails from "@/components/BusinessPhotoThumbnails";
 import type { BatchItemWithBusiness } from "@/lib/supabase/types";
 
@@ -12,7 +12,7 @@ type BatchItemsTableProps = {
   disableActions?: boolean;
 };
 
-type ActiveAction = "fetch" | "generate" | null;
+type ActiveAction = "fetch" | "generate" | "refreshPhotos" | null;
 
 export default function BatchItemsTable({
   items,
@@ -49,6 +49,24 @@ export default function BatchItemsTable({
 
     startTransition(async () => {
       const result = await generateWebsite(batchItemId);
+
+      if (!result.success) {
+        setActionError(result.error);
+      }
+
+      setActiveItemId(null);
+      setActiveAction(null);
+      router.refresh();
+    });
+  }
+
+  function handleRefreshPhotos(batchItemId: string) {
+    setActionError(null);
+    setActiveItemId(batchItemId);
+    setActiveAction("refreshPhotos");
+
+    startTransition(async () => {
+      const result = await refreshPhotos(batchItemId);
 
       if (!result.success) {
         setActionError(result.error);
@@ -102,6 +120,8 @@ export default function BatchItemsTable({
               const isActive = isPending && activeItemId === item.id;
               const isFetching = isActive && activeAction === "fetch";
               const isGenerating = isActive && activeAction === "generate";
+              const isRefreshingPhotos =
+                isActive && activeAction === "refreshPhotos";
 
               return (
                 <tr key={item.id}>
@@ -159,6 +179,18 @@ export default function BatchItemsTable({
                           className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-900 transition-colors enabled:hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           {isGenerating ? "Generating..." : "Generate Website"}
+                        </button>
+                      )}
+                      {item.business_id && (
+                        <button
+                          type="button"
+                          onClick={() => handleRefreshPhotos(item.id)}
+                          disabled={isPending || disableActions}
+                          className="rounded-md border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs font-medium text-zinc-700 transition-colors enabled:hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {isRefreshingPhotos
+                            ? "Refreshing..."
+                            : "Refresh Photos"}
                         </button>
                       )}
                       {item.status === "complete" && item.site_id && (

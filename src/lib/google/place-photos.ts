@@ -19,7 +19,7 @@ export type BusinessPhotosJson = {
   errors: string[];
 };
 
-export const MAX_PLACE_PHOTOS = 5;
+export const MAX_PLACE_PHOTOS = 10;
 export const PHOTO_MAX_WIDTH_PX = 1200;
 
 type PlacePhotoMediaResponse = {
@@ -82,8 +82,20 @@ export async function fetchPlacePhotoMediaUrl(
 export async function resolvePlacePhotos(
   photos: GooglePlacePhoto[],
 ): Promise<BusinessPhotosJson> {
+  const seenNames = new Set<string>();
   const selectedPhotos = photos
-    .filter((photo) => typeof photo.name === "string" && photo.name.length > 0)
+    .filter((photo) => {
+      if (typeof photo.name !== "string" || photo.name.length === 0) {
+        return false;
+      }
+
+      if (seenNames.has(photo.name)) {
+        return false;
+      }
+
+      seenNames.add(photo.name);
+      return true;
+    })
     .slice(0, MAX_PLACE_PHOTOS);
 
   if (selectedPhotos.length === 0) {
