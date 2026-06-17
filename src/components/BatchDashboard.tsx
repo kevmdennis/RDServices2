@@ -140,6 +140,12 @@ export default function BatchDashboard({
     (item) => item.status === "complete" && item.site_id,
   );
 
+  const hasExportableSites = items.some((item) => item.site_id);
+
+  function handleExportPublicLinks() {
+    window.location.assign(`/api/batches/${batch.id}/export-links`);
+  }
+
   function handleFixExistingSiteText() {
     const completedCount = items.filter(
       (item) => item.status === "complete" && item.site_id,
@@ -212,7 +218,17 @@ export default function BatchDashboard({
               Process all pending items sequentially: fetch Google data, then generate websites.
             </p>
           </div>
-          <div className="flex flex-col gap-2 sm:flex-row">
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
+            {hasExportableSites && (
+              <button
+                type="button"
+                onClick={handleExportPublicLinks}
+                disabled={isGenerating || batch.status === "processing"}
+                className="rounded-lg border border-zinc-300 bg-white px-5 py-2.5 text-sm font-medium text-zinc-900 transition-colors enabled:hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Export Public Links CSV
+              </button>
+            )}
             {hasCompletedSites && (
               <button
                 type="button"

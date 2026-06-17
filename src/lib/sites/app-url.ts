@@ -17,3 +17,30 @@ export function getAppBaseUrl(): string {
 export function buildPublicWebsiteUrl(slug: string): string {
   return `${getAppBaseUrl()}/website/${slug}`;
 }
+
+export function buildInternalPreviewUrl(siteId: string): string {
+  return `${getAppBaseUrl()}/site/${siteId}`;
+}
+
+export function buildAnalyticsUrl(siteId: string): string {
+  return `${getAppBaseUrl()}/analytics/${siteId}`;
+}
+
+export function resolvePublicWebsiteUrl(site: {
+  public_url?: string | null;
+  slug?: string | null;
+}): string {
+  const stored = site.public_url?.trim();
+
+  if (stored) {
+    return stored;
+  }
+
+  const slug = site.slug?.trim();
+
+  if (slug) {
+    return buildPublicWebsiteUrl(slug);
+  }
+
+  return "";
+}
