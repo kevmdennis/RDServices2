@@ -7,6 +7,7 @@ import {
   getSiteMetricsBySiteIds,
   summarizeBatchMetrics,
 } from "@/lib/analytics/metrics";
+import { getSiteSummariesBySiteIds } from "@/lib/batches/site-publishing";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type {
   Batch,
@@ -83,10 +84,12 @@ export default async function BatchPage({ params }: BatchPageProps) {
 
   const metricsBySiteId = await getSiteMetricsBySiteIds(siteIds);
   const metricsSummary = summarizeBatchMetrics(metricsBySiteId);
+  const siteById = await getSiteSummariesBySiteIds(siteIds);
 
   const itemsWithMetrics = itemsWithBusiness.map((item) => ({
     ...item,
     metrics: item.site_id ? getMetricsForSite(metricsBySiteId, item.site_id) : null,
+    site: item.site_id ? siteById.get(item.site_id) ?? null : null,
   }));
 
   return (

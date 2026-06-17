@@ -1,3 +1,4 @@
+import { applyPublicPublishingToSite } from "@/lib/sites/publish-site";
 import { createOpenAIClient } from "@/lib/openai/client";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Business } from "@/lib/supabase/types";
@@ -118,7 +119,19 @@ export async function generateSiteForBusiness(
     );
   }
 
-  return { siteId: site.id, site };
+  await applyPublicPublishingToSite(site.id, business.name);
+
+  const { data: publishedSite, error: reloadError } = await supabase
+    .from("sites")
+    .select("*")
+    .eq("id", site.id)
+    .single<Site>();
+
+  if (reloadError || !publishedSite) {
+    return { siteId: site.id, site };
+  }
+
+  return { siteId: publishedSite.id, site: publishedSite };
 }
 
 async function generateSiteContentWithOpenAI(

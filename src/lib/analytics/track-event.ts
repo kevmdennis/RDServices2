@@ -1,9 +1,10 @@
 import { calculateEngagementScore } from "@/lib/analytics/engagement-score";
 import {
+  METRICS_EVENT_TYPES,
   WEBSITE_EVENT_TYPES,
+  type MetricsEventType,
   type SiteMetrics,
   type TrackEventInput,
-  type WebsiteEventType,
 } from "@/lib/analytics/types";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -23,8 +24,14 @@ type TrackEventRequestMeta = {
   userAgent?: string | null;
 };
 
-export function isValidWebsiteEventType(value: string): value is WebsiteEventType {
-  return WEBSITE_EVENT_TYPES.includes(value as WebsiteEventType);
+export function isValidWebsiteEventType(
+  value: string,
+): value is TrackEventInput["eventType"] {
+  return WEBSITE_EVENT_TYPES.includes(value as TrackEventInput["eventType"]);
+}
+
+function isMetricsEventType(value: string): value is MetricsEventType {
+  return METRICS_EVENT_TYPES.includes(value as MetricsEventType);
 }
 
 export async function recordWebsiteEvent(
@@ -71,12 +78,14 @@ export async function recordWebsiteEvent(
     throw new TrackEventError(insertError.message, 500, "EVENT_INSERT_FAILED");
   }
 
-  await upsertSiteMetrics(site.id, input.eventType);
+  if (isMetricsEventType(input.eventType)) {
+    await upsertSiteMetrics(site.id, input.eventType);
+  }
 }
 
 async function upsertSiteMetrics(
   siteId: string,
-  eventType: WebsiteEventType,
+  eventType: MetricsEventType,
 ): Promise<void> {
   const supabase = createAdminClient();
 
@@ -127,6 +136,8 @@ async function upsertSiteMetrics(
       break;
     case "faq_expand":
       metrics.faq_expands += 1;
+      break;
+    default:
       break;
   }
 

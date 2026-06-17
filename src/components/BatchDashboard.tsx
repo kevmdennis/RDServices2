@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, useTransition } from "react";
-import { fixExistingSiteText } from "@/app/actions/batch";
+import { fixExistingSiteText, generateMissingPublicLinks } from "@/app/actions/batch";
 import BatchItemsTable from "@/components/BatchItemsTable";
 import {
   computeBatchStatusCounts,
@@ -39,6 +39,8 @@ export default function BatchDashboard({
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [isFixingSiteText, startFixSiteTextTransition] = useTransition();
+  const [isGeneratingPublicLinks, startGeneratePublicLinksTransition] =
+    useTransition();
 
   useEffect(() => {
     setBatch(initialBatch);
@@ -169,6 +171,37 @@ export default function BatchDashboard({
     });
   }
 
+  function handleGenerateMissingPublicLinks() {
+    const completedCount = items.filter(
+      (item) => item.status === "complete" && item.site_id,
+    ).length;
+
+    const confirmed = window.confirm(
+      `Generate missing public links for ${completedCount} completed site(s)? This updates slug and public_url only.`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setActionError(null);
+    setActionMessage(null);
+
+    startGeneratePublicLinksTransition(async () => {
+      const result = await generateMissingPublicLinks(batch.id);
+
+      if (!result.success) {
+        setActionError(result.error);
+        return;
+      }
+
+      setActionMessage(
+        `Public links: ${result.updatedCount} updated, ${result.skippedCount} already set (${result.totalSites} total).`,
+      );
+      await refreshBatchStatus();
+    });
+  }
+
   return (
     <>
       <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
@@ -183,11 +216,29 @@ export default function BatchDashboard({
             {hasCompletedSites && (
               <button
                 type="button"
+                onClick={handleGenerateMissingPublicLinks}
+                disabled={
+                  isGenerating ||
+                  batch.status === "processing" ||
+                  isGeneratingPublicLinks ||
+                  isFixingSiteText
+                }
+                className="rounded-lg border border-zinc-300 bg-white px-5 py-2.5 text-sm font-medium text-zinc-900 transition-colors enabled:hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isGeneratingPublicLinks
+                  ? "Generating links..."
+                  : "Generate Missing Public Links"}
+              </button>
+            )}
+            {hasCompletedSites && (
+              <button
+                type="button"
                 onClick={handleFixExistingSiteText}
                 disabled={
                   isGenerating ||
                   batch.status === "processing" ||
-                  isFixingSiteText
+                  isFixingSiteText ||
+                  isGeneratingPublicLinks
                 }
                 className="rounded-lg border border-zinc-300 bg-white px-5 py-2.5 text-sm font-medium text-zinc-900 transition-colors enabled:hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
               >

@@ -24,9 +24,9 @@ export default async function AnalyticsPage({ params }: AnalyticsPageProps) {
 
   const { data: site, error: siteError } = await supabase
     .from("sites")
-    .select("id, business_id, business_name")
+    .select("id, business_id, business_name, slug, public_url")
     .eq("id", siteId)
-    .single<Pick<Site, "id" | "business_id" | "business_name">>();
+    .single<Pick<Site, "id" | "business_id" | "business_name" | "slug" | "public_url">>();
 
   if (siteError || !site) {
     notFound();
@@ -66,14 +66,26 @@ export default async function AnalyticsPage({ params }: AnalyticsPageProps) {
                 {businessName}
               </h1>
             </div>
-            <Link
-              href={`/site/${siteId}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm font-medium text-blue-700 hover:text-blue-900"
-            >
-              View website →
-            </Link>
+            <div className="flex flex-col gap-2 sm:items-end">
+              <Link
+                href={`/site/${siteId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm font-medium text-blue-700 hover:text-blue-900"
+              >
+                Internal preview →
+              </Link>
+              {site.public_url && (
+                <Link
+                  href={site.public_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm font-medium text-sky-700 hover:text-sky-900"
+                >
+                  Public website →
+                </Link>
+              )}
+            </div>
           </div>
         </header>
 
@@ -111,6 +123,11 @@ export default async function AnalyticsPage({ params }: AnalyticsPageProps) {
           <p className="mt-4 text-sm text-zinc-500">
             Formula: (views × 1) + (website clicks × 3) + (maps clicks × 5) + (CTA
             clicks × 7) + (phone clicks × 10)
+          </p>
+          <p className="mt-4 text-sm text-zinc-500">
+            Page views include traffic from internal previews (`/site/[siteId]`) and
+            public URLs (`/website/[slug]`). Check the page URL column in recent
+            activity to see where visits came from.
           </p>
         </section>
 

@@ -6,25 +6,27 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { Site } from "@/lib/sites/types";
 import type { Business } from "@/lib/supabase/types";
 
-type SitePageProps = {
-  params: Promise<{ siteId: string }>;
+type PublicWebsitePageProps = {
+  params: Promise<{ slug: string }>;
   searchParams: Promise<{ debugTracking?: string }>;
 };
 
 export async function generateMetadata({
   params,
-}: Pick<SitePageProps, "params">): Promise<Metadata> {
-  const { siteId } = await params;
+}: Pick<PublicWebsitePageProps, "params">): Promise<Metadata> {
+  const { slug } = await params;
   const supabase = createAdminClient();
 
   const { data: site } = await supabase
     .from("sites")
     .select("business_name, hero_title")
-    .eq("id", siteId)
+    .eq("slug", slug)
+    .eq("published", true)
+    .eq("public_status", "published")
     .maybeSingle<Pick<Site, "business_name" | "hero_title">>();
 
   if (!site) {
-    return { title: "Website preview" };
+    return { title: "Website not found" };
   }
 
   const heroTitle = site.hero_title
@@ -32,20 +34,25 @@ export async function generateMetadata({
     : null;
 
   return {
-    title: site.business_name ?? heroTitle ?? "Website preview",
-    description: heroTitle ?? "Generated local business website preview",
+    title: site.business_name ?? heroTitle ?? "Business website",
+    description: heroTitle ?? "Local business website",
   };
 }
 
-export default async function SitePage({ params, searchParams }: SitePageProps) {
-  const { siteId } = await params;
+export default async function PublicWebsitePage({
+  params,
+  searchParams,
+}: PublicWebsitePageProps) {
+  const { slug } = await params;
   const { debugTracking } = await searchParams;
   const supabase = createAdminClient();
 
   const { data: site, error: siteError } = await supabase
     .from("sites")
     .select("*")
-    .eq("id", siteId)
+    .eq("slug", slug)
+    .eq("published", true)
+    .eq("public_status", "published")
     .single<Site>();
 
   if (siteError || !site) {
@@ -68,6 +75,8 @@ export default async function SitePage({ params, searchParams }: SitePageProps) 
       business={business}
       trackingEnabled={true}
       debugTracking={debugTracking === "true"}
+      pageViewEventValue="website_page_view"
+      isPublicView={true}
     />
   );
 }

@@ -1,5 +1,14 @@
 import type { BusinessPhotosJson } from "@/lib/google/place-photos";
 import type { SiteMetrics } from "@/lib/analytics/types";
+import type { SitePublicStatus } from "@/lib/sites/types";
+
+export type BatchItemSiteSummary = {
+  id: string;
+  slug: string | null;
+  public_url: string | null;
+  published: boolean | null;
+  public_status: SitePublicStatus | null;
+};
 
 export type BatchStatus =
   | "pending"
@@ -62,4 +71,5 @@ export type BatchItemWithBusiness = BatchItem & {
     "id" | "name" | "address" | "phone" | "rating" | "photos_json"
   > | null;
   metrics?: SiteMetrics | null;
+  site?: BatchItemSiteSummary | null;
 };

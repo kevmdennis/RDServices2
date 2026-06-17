@@ -1,15 +1,17 @@
 import { notFound } from "next/navigation";
-import SiteHomepage from "@/components/site-preview/SiteHomepage";
+import GeneratedWebsite from "@/components/site-preview/GeneratedWebsite";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Site } from "@/lib/sites/types";
 import type { Business } from "@/lib/supabase/types";
 
 type DemoPageProps = {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ debugTracking?: string }>;
 };
 
-export default async function DemoPage({ params }: DemoPageProps) {
+export default async function DemoPage({ params, searchParams }: DemoPageProps) {
   const { slug } = await params;
+  const { debugTracking } = await searchParams;
   const supabase = createAdminClient();
 
   const { data: site, error: siteError } = await supabase
@@ -32,5 +34,12 @@ export default async function DemoPage({ params }: DemoPageProps) {
     notFound();
   }
 
-  return <SiteHomepage site={site} business={business} />;
+  return (
+    <GeneratedWebsite
+      site={site}
+      business={business}
+      trackingEnabled={true}
+      debugTracking={debugTracking === "true"}
+    />
+  );
 }

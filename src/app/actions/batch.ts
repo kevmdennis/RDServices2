@@ -1,6 +1,7 @@
 "use server";
 
 import { fixBatchSiteText } from "@/lib/sites/fix-site-text";
+import { fixBatchPublicLinks } from "@/lib/sites/fix-public-links";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -83,6 +84,37 @@ export async function fixExistingSiteText(
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Failed to fix existing site text.";
+
+    return { success: false, error: message };
+  }
+}
+
+export type GenerateMissingPublicLinksResult =
+  | {
+      success: true;
+      updatedCount: number;
+      skippedCount: number;
+      totalSites: number;
+    }
+  | { success: false; error: string };
+
+export async function generateMissingPublicLinks(
+  batchId: string,
+): Promise<GenerateMissingPublicLinksResult> {
+  try {
+    const result = await fixBatchPublicLinks(batchId);
+
+    revalidatePath(`/batch/${batchId}`);
+
+    return {
+      success: true,
+      ...result,
+    };
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Failed to generate missing public links.";
 
     return { success: false, error: message };
   }

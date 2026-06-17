@@ -1,4 +1,5 @@
 import { processBatchItemEndToEnd } from "@/lib/batches/process-batch-item";
+import { getSiteSummariesBySiteIds } from "@/lib/batches/site-publishing";
 import {
   computeBatchStatusCounts,
   countTerminalItems,
@@ -209,10 +210,12 @@ export async function getBatchStatusSnapshot(batchId: string) {
     .filter((siteId): siteId is string => siteId !== null);
 
   const metricsBySiteId = await getSiteMetricsBySiteIds(siteIds);
+  const siteById = await getSiteSummariesBySiteIds(siteIds);
 
   const itemsWithMetrics = itemsWithBusiness.map((item) => ({
     ...item,
     metrics: item.site_id ? getMetricsForSite(metricsBySiteId, item.site_id) : null,
+    site: item.site_id ? siteById.get(item.site_id) ?? null : null,
   }));
 
   return {

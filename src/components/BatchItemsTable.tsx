@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { fetchBusinessData, generateWebsite, refreshPhotos } from "@/app/actions/batch-item";
 import BusinessPhotoThumbnails from "@/components/BusinessPhotoThumbnails";
+import CopyPublicLinkButton from "@/components/CopyPublicLinkButton";
 import type { BatchItemWithBusiness } from "@/lib/supabase/types";
 
 function formatLastViewed(value: string | null | undefined): string {
@@ -149,6 +150,8 @@ export default function BatchItemsTable({
               const isRefreshingPhotos =
                 isActive && activeAction === "refreshPhotos";
               const metrics = item.metrics;
+              const site = item.site;
+              const publicWebsiteHref = site?.slug ? `/website/${site.slug}` : null;
 
               return (
                 <tr key={item.id}>
@@ -246,13 +249,28 @@ export default function BatchItemsTable({
                             rel="noopener noreferrer"
                             className="text-xs font-medium text-blue-700 hover:text-blue-900"
                           >
-                            View Website
+                            View Internal Preview
                           </Link>
+                          {publicWebsiteHref ? (
+                            <Link
+                              href={publicWebsiteHref}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs font-medium text-sky-700 hover:text-sky-900"
+                            >
+                              View Public Website
+                            </Link>
+                          ) : (
+                            <span className="text-xs text-zinc-400">
+                              Public link pending
+                            </span>
+                          )}
+                          <CopyPublicLinkButton publicUrl={site?.public_url} />
                           <Link
                             href={`/analytics/${item.site_id}`}
                             className="text-xs font-medium text-violet-700 hover:text-violet-900"
                           >
-                            Analytics
+                            View Analytics
                           </Link>
                         </>
                       )}

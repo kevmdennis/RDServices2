@@ -1,4 +1,4 @@
-export const WEBSITE_EVENT_TYPES = [
+export const METRICS_EVENT_TYPES = [
   "page_view",
   "phone_click",
   "google_maps_click",
@@ -9,13 +9,16 @@ export const WEBSITE_EVENT_TYPES = [
   "faq_expand",
 ] as const;
 
+export const WEBSITE_EVENT_TYPES = [...METRICS_EVENT_TYPES, "test_event"] as const;
+
+export type MetricsEventType = (typeof METRICS_EVENT_TYPES)[number];
 export type WebsiteEventType = (typeof WEBSITE_EVENT_TYPES)[number];
 
 export type WebsiteEvent = {
   id: string;
   site_id: string;
   business_id: string | null;
-  event_type: WebsiteEventType;
+  event_type: WebsiteEventType | string;
   event_value: string | null;
   page_url: string | null;
   referrer: string | null;
@@ -39,7 +42,7 @@ export type SiteMetrics = {
 export type TrackEventInput = {
   siteId: string;
   businessId?: string;
-  eventType: WebsiteEventType;
+  eventType: WebsiteEventType | "test_event";
   eventValue?: string;
   pageUrl?: string;
 };

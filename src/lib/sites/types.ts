@@ -1,3 +1,5 @@
+export type SitePublicStatus = "draft" | "published" | "archived";
+
 export type SiteService = {
   name: string;
   description: string;
@@ -49,5 +51,9 @@ export type Site = {
   contact_json: SiteContact | null;
   theme_json: SiteTheme | null;
   generated_html: string | null;
+  slug: string | null;
+  public_url: string | null;
+  published: boolean | null;
+  public_status: SitePublicStatus | null;
   created_at: string;
 };
